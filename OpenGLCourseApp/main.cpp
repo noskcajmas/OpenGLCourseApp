@@ -42,24 +42,24 @@ void CreateTriangle()
 
 	// Steps to create the VAO and VBO
 
-	glGenVertexArrays(1, &VAO); // [1] Create VAO ID [1]
-	glBindVertexArray(VAO); // [2] Bind the VAO with that ID [2]
+	glGenVertexArrays(1, &VAO); // [1.1] Create VAO ID [1.1]
+	glBindVertexArray(VAO); // [1.2] Bind the VAO with that ID [1.2]
 
-	glGenBuffers(1, &VBO); // [3] Create VBO ID inside the VAO [3]
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // [4] Bind VBA to the GLA_ARRAY_BUFFER [4]
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // [5] Bind the buffer data (vertices) to the GL_ARRAY_BUFFER VBO [5]
+	glGenBuffers(1, &VBO); // [1.3] Create VBO ID inside the VAO [1.3]
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); // [1.4] Bind VBA to the GLA_ARRAY_BUFFER [1.4]
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // [1.5] Bind the buffer data (vertices) to the GL_ARRAY_BUFFER VBO [1.5]
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0); // [6] Define the attribute pointer formatting [6]
-	glEnableVertexAttribArray(0); // [7] Enable the attirube pointer [7]
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0); // [1.6] Define the attribute pointer formatting [1.6]
+	glEnableVertexAttribArray(0); // [1.7] Enable the attirube pointer [1.7]
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0); // [8.1] Unbind the VBO [8.1]
+	glBindBuffer(GL_ARRAY_BUFFER, 0); // [1.8.1] Unbind the VBO [1.8.1]
 
-	glBindVertexArray(0); // [8.2] Unbind the VAO [8.2]
+	glBindVertexArray(0); // [1.8.2] Unbind the VAO [1.8.2]
 }
 
 void AddShader(GLuint theProgram, const GLchar* shaderCode, GLenum shaderType)
 {
-	GLuint theShader = glCreateShader(shaderType);
+	GLuint theShader = glCreateShader(shaderType); // [2.2] Create empty shader [2.2]
 
 	const GLchar* theCode[1];
 	theCode[0] = shaderCode;
@@ -67,8 +67,8 @@ void AddShader(GLuint theProgram, const GLchar* shaderCode, GLenum shaderType)
 	GLint codeLength[1];
 	codeLength[0] = strlen(shaderCode);
 
-	glShaderSource(theShader, 1, theCode, codeLength);
-	glCompileShader(theShader);
+	glShaderSource(theShader, 1, theCode, codeLength); // [2.3] Attach shader source code to shaders [2.3]
+	glCompileShader(theShader); // [2.4] Compile shaders [2.4]
 
 	GLint result = 0;
 	GLchar eLog[1024] = { 0 };
@@ -81,14 +81,14 @@ void AddShader(GLuint theProgram, const GLchar* shaderCode, GLenum shaderType)
 		return;
 	}
 
-	glAttachShader(theProgram, theShader);
+	glAttachShader(theProgram, theShader); // [2.5] Attach shaders to program [2.5]
 }
 
 void CompileShaders() 
 {
-	shader = glCreateProgram();
+	shader = glCreateProgram(); // [2.1] Create empty program and give shader the ID [2.1]
 
-	if (!shader) 
+	if (!shader)
 	{
 		printf("Error creating shader program\n");
 		return;
@@ -100,7 +100,7 @@ void CompileShaders()
 	GLint result = 0;
 	GLchar eLog[1024] = { 0 };
 
-	glLinkProgram(shader);
+	glLinkProgram(shader); // [2.6] Link program (creates executables from shaders and links them together) [2.6]
 	glGetProgramiv(shader, GL_LINK_STATUS, &result);
 	if (!result)
 	{
@@ -109,7 +109,7 @@ void CompileShaders()
 		return;
 	}
 
-	glValidateProgram(shader);
+	glValidateProgram(shader); // [2.7] Validate program [2.7]
 	glGetProgramiv(shader, GL_VALIDATE_STATUS, &result);
 	if (!result)
 	{
@@ -146,7 +146,7 @@ int main()
 		return 1;
 	}
 
-	// Get Bugger size information
+	// Get Buffer size information
 	int bufferWidth, bufferHeight;
 	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
 
@@ -167,8 +167,8 @@ int main()
 	// Setup Viewport size
 	glViewport(0, 0, bufferWidth, bufferHeight);
 
-	CreateTriangle();
-	CompileShaders();
+	CreateTriangle(); // Creates VAO and VBO and defines data
+	CompileShaders(); // Compiles shaders (via adding shaders to shader program)
 
 	// Loop until window closed
 	while (!glfwWindowShouldClose(mainWindow))
@@ -180,13 +180,13 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shader);
+		glUseProgram(shader); // Specifies which program to use (by ID)
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		glBindVertexArray(0);
+		glBindVertexArray(VAO); // Binding the VAO
+		glDrawArrays(GL_TRIANGLES, 0, 3); // Draw the object to the window
+		glBindVertexArray(0); // Unbinding the VAO
 
-		glUseProgram(0);
+		glUseProgram(0); // Unassign shader program
 
 		glfwSwapBuffers(mainWindow);
 	}
