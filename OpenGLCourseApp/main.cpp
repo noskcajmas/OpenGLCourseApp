@@ -40,19 +40,21 @@ void CreateTriangle()
 		0.0f, 1.0f, 0.0f
 	};
 
-	glGenVertexArrays(1, &VAO); // Create VAO ID
-	glBindVertexArray(VAO); // Bind the VAO with that ID
+	// Steps to create the VAO and VBO
 
-	glGenBuffers(1, &VBO); // Create VBO ID inside the VAO
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind VBA to the GLA_ARRAY_BUFFER
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Bind the buffer data (vertices) to the GL_ARRAY_BUFFER VBO
+	glGenVertexArrays(1, &VAO); // [1] Create VAO ID [1]
+	glBindVertexArray(VAO); // [2] Bind the VAO with that ID [2]
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
+	glGenBuffers(1, &VBO); // [3] Create VBO ID inside the VAO [3]
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); // [4] Bind VBA to the GLA_ARRAY_BUFFER [4]
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // [5] Bind the buffer data (vertices) to the GL_ARRAY_BUFFER VBO [5]
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0); // [6] Define the attribute pointer formatting [6]
+	glEnableVertexAttribArray(0); // [7] Enable the attirube pointer [7]
 
-	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0); // [8.1] Unbind the VBO [8.1]
+
+	glBindVertexArray(0); // [8.2] Unbind the VAO [8.2]
 }
 
 void AddShader(GLuint theProgram, const GLchar* shaderCode, GLenum shaderType)
