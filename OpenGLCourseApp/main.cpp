@@ -33,18 +33,19 @@ void main()														\n\
 
 void CreateTriangle()
 {
+	// Defines triangle points 
 	GLfloat vertices[] = {
 		-1.0, -1.0f, 0.0f,
 		1.0f, -1.0f, 0.0f,
 		0.0f, 1.0f, 0.0f
 	};
 
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+	glGenVertexArrays(1, &VAO); // Create VAO ID
+	glBindVertexArray(VAO); // Bind the VAO with that ID
 
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glGenBuffers(1, &VBO); // Create VBO ID inside the VAO
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind VBA to the GLA_ARRAY_BUFFER
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Bind the buffer data (vertices) to the GL_ARRAY_BUFFER VBO
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
@@ -54,7 +55,7 @@ void CreateTriangle()
 	glBindVertexArray(0);
 }
 
-void AddShader(GLuint theProgram, const char* shaderCode, GLenum shaderType)
+void AddShader(GLuint theProgram, const GLchar* shaderCode, GLenum shaderType)
 {
 	GLuint theShader = glCreateShader(shaderType);
 
