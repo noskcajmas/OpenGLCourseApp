@@ -5,16 +5,23 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 // Window dimensions
 const GLint WIDTH = 800, HEIGHT = 600;
+const float toRadians = 3.14159265f / 180.0f;
 
-GLuint VAO, VBO, shader, uniformXMove;
+GLuint VAO, VBO, shader, uniformModel;
+
+float curAngle;
 
 // Variables to track the motion
 bool direction = true;
 float triOffset = 0.0f;
 float triMaxoffset = 0.7f;
-float triIncrement = 0.01f;
+float triIncrement = 0.02f;
 
 // Vertex Shader
 static const char* vShader = "										\n\
@@ -22,11 +29,11 @@ static const char* vShader = "										\n\
 																	\n\
 layout(location = 0) in vec3 pos;									\n\
 																	\n\
-uniform float xMove;												\n\
+uniform mat4 model;													\n\
 																	\n\
 void main()															\n\
 {																	\n\
-	gl_Position = vec4(0.4 * pos.x + xMove, 0.4 * pos.y, pos.z, 1.0);	\n\
+	gl_Position = model * vec4(0.4 * pos.x, 0.4 * pos.y, pos.z, 1.0);	\n\
 }";
 
 // Fragment Shader
@@ -127,7 +134,7 @@ void CompileShaders()
 		return;
 	}
 
-	uniformXMove = glGetUniformLocation(shader, "xMove"); //  Grab the location (id) of the variable xMove and assign it to uniformXMove
+	uniformModel = glGetUniformLocation(shader, "model"); //  Grab the location (id) of the variable model and assign it to uniformModel
 
 }
 
@@ -197,10 +204,16 @@ int main()
 		}
 
 		// Change direction if the triangle is at the max offset range. 
-		if (abs(triOffset) >= triMaxoffset) {
+		if (abs(triOffset) >= triMaxoffset) 
+		{
 			direction = !direction;
 		}
 
+		curAngle += 0.2f;
+		if (curAngle >= 360)
+		{
+			curAngle -= 360;
+		}
 
 		// Clear window
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -208,7 +221,11 @@ int main()
 
 		glUseProgram(shader); // Specifies which program to use (by id)
 
-		glUniform1f(uniformXMove, triOffset); // Pass the value of triOffset at the location of uniformXMove (xMove) in the shader
+		glm::mat4 model; // Creates an identity matrix
+		model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f)); // Applies a translation to the model
+		model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 0.0f, 1.0f)); // Apllies a rotation to the model
+
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model)); // Pass the value of model at the location of uniformModel (xMove) in the shader
 
 		glBindVertexArray(VAO); // Binding the VAO
 		glDrawArrays(GL_TRIANGLES, 0, 3); // Draw the object to the window
