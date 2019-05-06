@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <cmath>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -7,28 +8,36 @@
 // Window dimensions
 const GLint WIDTH = 800, HEIGHT = 600;
 
-GLuint VAO, VBO, shader;
+GLuint VAO, VBO, shader, uniformXMove;
+
+// Variables to track the motion
+bool direction = true;
+float triOffset = 0.0f;
+float triMaxoffset = 0.7f;
+float triIncrement = 0.01f;
 
 // Vertex Shader
-static const char* vShader = "									\n\
-#version 330													\n\
-																\n\
-layout(location = 0) in vec3 pos;								\n\
-																\n\
-void main()														\n\
-{																\n\
-	gl_Position = vec4(0.4 * pos.x, 0.4 * pos.y, pos.z, 1.0);	\n\
+static const char* vShader = "										\n\
+#version 330														\n\
+																	\n\
+layout(location = 0) in vec3 pos;									\n\
+																	\n\
+uniform float xMove;												\n\
+																	\n\
+void main()															\n\
+{																	\n\
+	gl_Position = vec4(0.4 * pos.x + xMove, 0.4 * pos.y, pos.z, 1.0);	\n\
 }";
 
 // Fragment Shader
-static const char* fShader = "									\n\
-#version 330													\n\
-																\n\
-out vec4 colour;												\n\
-																\n\
-void main()														\n\
-{																\n\
-	colour = vec4(1.0, 0.0, 0.0, 1.0);							\n\
+static const char* fShader = "										\n\
+#version 330														\n\
+																	\n\
+out vec4 colour;													\n\
+																	\n\
+void main()															\n\
+{																	\n\
+	colour = vec4(1.0, 0.0, 0.0, 1.0);								\n\
 }";
 
 void CreateTriangle()
@@ -118,6 +127,8 @@ void CompileShaders()
 		return;
 	}
 
+	uniformXMove = glGetUniformLocation(shader, "xMove"); //  Grab the location (id) of the variable xMove and assign it to uniformXMove
+
 }
 
 int main()
@@ -173,14 +184,31 @@ int main()
 	// Loop until window closed
 	while (!glfwWindowShouldClose(mainWindow))
 	{
-		// Get and Handle user input event
+		// Get and handle user input
 		glfwPollEvents();
+
+		// Check the direction of the movement and adjust the offset in that direction
+		if (direction)
+		{
+			triOffset += triIncrement;
+		}
+		else {
+			triOffset -= triIncrement;
+		}
+
+		// Change direction if the triangle is at the max offset range. 
+		if (abs(triOffset) >= triMaxoffset) {
+			direction = !direction;
+		}
+
 
 		// Clear window
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shader); // Specifies which program to use (by ID)
+		glUseProgram(shader); // Specifies which program to use (by id)
+
+		glUniform1f(uniformXMove, triOffset); // Pass the value of triOffset at the location of uniformXMove (xMove) in the shader
 
 		glBindVertexArray(VAO); // Binding the VAO
 		glDrawArrays(GL_TRIANGLES, 0, 3); // Draw the object to the window
