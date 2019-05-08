@@ -13,15 +13,22 @@
 const GLint WIDTH = 800, HEIGHT = 600;
 const float toRadians = 3.14159265f / 180.0f;
 
-GLuint VAO, VBO, shader, uniformModel;
+GLuint VAO, VBO, IBO, shader, uniformModel, uniformProjection;
 
-float curAngle;
-
-// Variables to track the motion
+// Variables to track the translation
 bool direction = true;
 float triOffset = 0.0f;
 float triMaxoffset = 0.7f;
-float triIncrement = 0.02f;
+float triIncrement = 0.01f;
+
+// Variables to track the rotation
+float curAngle;
+
+// Variables to track the scaling
+bool sizeDirection = true;
+float curSize = 0.4;
+float maxSize = 0.8f;
+float minSize = 0.1f;
 
 // Vertex Shader
 static const char* vShader = "										\n\
@@ -29,29 +36,44 @@ static const char* vShader = "										\n\
 																	\n\
 layout(location = 0) in vec3 pos;									\n\
 																	\n\
+out vec4 vCol;														\n\
+																	\n\
 uniform mat4 model;													\n\
+uniform mat4 projection;											\n\
 																	\n\
 void main()															\n\
 {																	\n\
-	gl_Position = model * vec4(0.4 * pos.x, 0.4 * pos.y, pos.z, 1.0);	\n\
+	gl_Position = projection * model * vec4(pos, 1.0);				\n\
+	vCol = vec4(clamp(pos, 0.0f, 1.0f), 1.0f);						\n\
 }";
 
 // Fragment Shader
 static const char* fShader = "										\n\
 #version 330														\n\
 																	\n\
+in vec4 vCol;														\n\
+																	\n\
 out vec4 colour;													\n\
 																	\n\
 void main()															\n\
 {																	\n\
-	colour = vec4(1.0, 0.0, 0.0, 1.0);								\n\
+	colour = vCol;													\n\
 }";
 
 void CreateTriangle()
 {
+	// Define sides of triangle from the vertices (triangle points)
+	unsigned int indices[] = {
+		0, 3, 1,
+		1, 3, 2,
+		2, 3, 0,
+		0, 1, 2
+	};
+
 	// Defines triangle points 
 	GLfloat vertices[] = {
 		-1.0, -1.0f, 0.0f,
+		0.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 0.0f,
 		0.0f, 1.0f, 0.0f
 	};
@@ -60,6 +82,10 @@ void CreateTriangle()
 
 	glGenVertexArrays(1, &VAO); // [1.1] Create VAO ID [1.1]
 	glBindVertexArray(VAO); // [1.2] Bind the VAO with that ID [1.2]
+
+	glGenBuffers(1, &IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &VBO); // [1.3] Create VBO ID inside the VAO [1.3]
 	glBindBuffer(GL_ARRAY_BUFFER, VBO); // [1.4] Bind VBA to the GLA_ARRAY_BUFFER [1.4]
@@ -71,6 +97,8 @@ void CreateTriangle()
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // [1.8.1] Unbind the VBO [1.8.1]
 
 	glBindVertexArray(0); // [1.8.2] Unbind the VAO [1.8.2]
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // The IBO should alway be unbinded after the VAO. 
 }
 
 void AddShader(GLuint theProgram, const GLchar* shaderCode, GLenum shaderType)
@@ -134,7 +162,8 @@ void CompileShaders()
 		return;
 	}
 
-	uniformModel = glGetUniformLocation(shader, "model"); //  Grab the location (id) of the variable model and assign it to uniformModel
+	uniformModel = glGetUniformLocation(shader, "model"); //  Grab the location (id) of the model matrix and assign it to uniformModel
+	uniformProjection = glGetUniformLocation(shader, "projection"); //  Grab the location (id) of the projection matrix and assign it to uniformProjection
 
 }
 
@@ -182,11 +211,15 @@ int main()
 		return 1;
 	}
 
-	// Setup Viewport size
+	glEnable(GL_DEPTH_TEST);
+
+	// Create Viewport
 	glViewport(0, 0, bufferWidth, bufferHeight);
 
 	CreateTriangle(); // Creates VAO and VBO and defines data
 	CompileShaders(); // Compiles shaders (via adding shaders to shader program)
+
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth/(GLfloat)bufferHeight, 0.1f, 100.0f); // Creates a perspective projection matrix
 
 	// Loop until window closed
 	while (!glfwWindowShouldClose(mainWindow))
@@ -209,27 +242,46 @@ int main()
 			direction = !direction;
 		}
 
-		curAngle += 0.2f;
+		curAngle += 0.4f;
 		if (curAngle >= 360)
 		{
 			curAngle -= 360;
 		}
 
+		if (direction)
+		{
+			curSize += 0.002f;
+		}
+		else 
+		{
+			curSize -= 0.002f;
+		}
+
+		if (curSize >= maxSize || curSize <= minSize)
+		{
+			sizeDirection = !sizeDirection;
+		}
+
 		// Clear window
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(shader); // Specifies which program to use (by id)
 
 		glm::mat4 model; // Creates an identity matrix
-		model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f)); // Applies a translation to the model
-		model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 0.0f, 1.0f)); // Apllies a rotation to the model
 
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model)); // Pass the value of model at the location of uniformModel (xMove) in the shader
+		model = glm::translate(model, glm::vec3(triOffset, 0.0f, -2.5f)); // Applies a translation to the model
+		//model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f)); // Applies a rotation to the model
+		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f)); // Applies scale to the model
+
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model)); // Attach the model matrix at the location of the model in the shader
+		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection)); // Attach the projection matrix at the location of projection in the shader
 
 		glBindVertexArray(VAO); // Binding the VAO
-		glDrawArrays(GL_TRIANGLES, 0, 3); // Draw the object to the window
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); // Binding the IBO
+		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0); // Draw the pyramid
 		glBindVertexArray(0); // Unbinding the VAO
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); // Unbinding the IBO
 
 		glUseProgram(0); // Unassign shader program
 
